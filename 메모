@@ -1,0 +1,26 @@
+1. NER 
+인터넷 자료
+여행: 지역, 숫자, 항공사, 호텔,
+
+호텔 org, loc 둘 다
+
+직접
+2. total_train_data.csv. corpus.txt   내용은 같음
+항공사, 호텔 이름 넣어서 문장만들기
+
+
+4.user_dic.tsv
+
+
+id      intent      NER     answer
+        장소        LOC
+        날짜        DAT
+        기간        DUR
+
+
+'도시'숙박정보 알려줘 대답 
+https://www.booking.com/searchresults.ko.html?ss={도시}&ssne={도시}&ssne_untouched={도시}
+
+
+
+

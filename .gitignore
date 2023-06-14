@@ -1,0 +1,4 @@
+*.pickle
+/venv
+.vscode
+cb_engine/backupData
