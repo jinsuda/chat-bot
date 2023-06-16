@@ -7,6 +7,7 @@ p = Preprocessing(
 )
 
 intent = IntentModel(model_name="cb_engine/models/intent/intent_model.h5", preprocess=p)
-query = "1월 5일 대한항공 항공권 예매 하고싶어"
-predict = intent.predict_class(query)
-print(predict)
+while True:
+    query = input("질문:")
+    predict = intent.predict_class(query)
+    print(predict)

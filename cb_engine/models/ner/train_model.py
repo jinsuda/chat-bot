@@ -47,7 +47,7 @@ tag_tokenizer.fit_on_texts(tag)
 
 voca_size = len(p.word_index) + 1
 tag_size = len(tag_tokenizer.word_index) + 1
-# print(tag_tokenizer.word_index)
+print(tag_tokenizer.word_index)
 # 단어 시퀀스
 x_train = [p.get_wordindex_sequence(sent) for sent in sentence]
 y_train = tag_tokenizer.texts_to_sequences(tag)

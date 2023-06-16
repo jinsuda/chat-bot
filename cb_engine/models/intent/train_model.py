@@ -13,7 +13,7 @@ from keras.layers import (
 )
 from utils.preprocessing import Preprocessing
 
-train_file = "cb_engine/models/intent/total_train_data.csv"
+train_file = "cb_engine/models/intent/test.csv"
 data = pd.read_csv(train_file, delimiter=",")
 data.to_csv("d.csv", encoding="utf8")
 query = data["query"].tolist()
