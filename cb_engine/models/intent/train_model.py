@@ -13,7 +13,7 @@ from keras.layers import (
 )
 from utils.preprocessing import Preprocessing
 
-train_file = "cb_engine/models/intent/test.csv"
+train_file = "cb_engine/models/intent/intent_data.csv"
 data = pd.read_csv(train_file, delimiter=",")
 data.to_csv("d.csv", encoding="utf8")
 query = data["query"].tolist()
@@ -50,7 +50,7 @@ val_ds = ds.skip(train_size).take(val_size).batch(20)
 test_ds = ds.skip(train_size + val_size).take(test_size).batch(20)
 
 EMB_SIZE = 128  # 임베딩 벡터 길이
-EPOCH = 5
+EPOCH = 10
 VOCA_SIZE = len(p.word_index) + 1  # 전체 단어 개수
 
 input_layer = Input(shape=(15,))
@@ -76,9 +76,9 @@ concat = concatenate([pool1, pool2, pool3])
 
 hidden = Dense(128, activation="relu")(concat)
 dropout_hidden = Dropout(rate=0.5)(hidden)
-logit = Dense(5, name="logit")(dropout_hidden)
-# 최종 노드 5개 이유 -> 분류하고자 하는 의도가 5개이기 때문
-pred = Dense(5, activation="softmax")(logit)
+logit = Dense(6, name="logit")(dropout_hidden)
+# 최종 노드 6개 이유 -> 분류하고자 하는 의도가 6개이기 때문
+pred = Dense(6, activation="softmax")(logit)
 
 model = keras.models.Model(input_layer, pred)
 model.compile(

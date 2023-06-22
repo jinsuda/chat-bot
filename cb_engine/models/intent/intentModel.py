@@ -9,7 +9,7 @@ import numpy as np
 class IntentModel:
     def __init__(self, model_name, preprocess):
         # 클래스별 레이블
-        self.label = {0: "인사", 1: "욕설", 2: "정보", 3: "예약", 4: "기타"}
+        self.label = {0: "인사", 1: "욕설", 2: "정보", 3: "예약", 4: "기타", 5: "맛집"}
 
         # 분류 모델 불러오기
         self.model = load_model(model_name)

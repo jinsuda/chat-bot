@@ -2,3 +2,4 @@
 /venv
 .vscode
 cb_engine/backupData
+cb_engine/venv

@@ -27,7 +27,7 @@ try:
     # ner : 개체명
     # query : 질문
     # answer : 답변
-    # answer_img : 답변 이미지
+    # answer_sub_url : 답변 url
     sql = """
       CREATE TABLE IF NOT EXISTS `chatbot_train_data` (
       `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -35,7 +35,7 @@ try:
       `ner` VARCHAR(1024) NULL,
       `query` TEXT NULL,
       `answer` TEXT NOT NULL,
-      `answer_image` VARCHAR(2048) NULL,
+      `answer_sub_url` VARCHAR(2048) NULL,
       PRIMARY KEY (`id`))
     ENGINE = InnoDB DEFAULT CHARSET=utf8
     """

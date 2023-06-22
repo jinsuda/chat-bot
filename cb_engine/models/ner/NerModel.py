@@ -3,6 +3,11 @@ from tensorflow.keras.models import Model, load_model
 from tensorflow.keras import preprocessing
 import numpy as np
 import requests
+from bs4 import BeautifulSoup
+from redis_data import create_redis_client
+import json
+
+redis_client = create_redis_client()
 
 
 class NerModel:
@@ -12,8 +17,8 @@ class NerModel:
             1: "O",
             2: "B_AIR",
             3: "I",
-            4: "B_DT",
-            5: "B_LC",
+            4: "B_LC",
+            5: "B_DT",
             6: "B_OG",
             7: "B_PS",
             8: "B_TI",
@@ -67,35 +72,106 @@ class NerModel:
         tag = [self.index_to_ner[i] for i in pred_class[0]]
         return list(zip(keyword, tag))
 
-    # 호텔 검색
-    def serch_hotel(self, query):
+    # 호텔 검색 (API사용)
+    # def search_hotel(self, query):
+    #     entities = self.predict(query)  # 입력된 문장에 대해 NER 수행하여 entity 추출
+    #     city_lc = [
+    #         entity for entity in entities if entity[1] == "B_LC"
+    #     ]  # 책 관련 entity 필터링
+    #     city_name = [entity[0] for entity in city_lc]  # 추출된 도시 이름들
+    #     # print(city_name)
+    #     url = "https://hotels4.p.rapidapi.com/locations/v3/search"
+    #     querystring = {
+    #         "q": city_name,
+    #         "locale": "ko_KR",
+    #     }
+
+    #     headers = {
+    #         "X-RapidAPI-Key": "477cad2fb7msh45fdc7b31b5ac16p1396b1jsn79ba71a45fc4",
+    #         "X-RapidAPI-Host": "hotels4.p.rapidapi.com",
+    #     }
+
+    #     response = requests.get(url, headers=headers, params=querystring)
+
+    #     response_json = response.json()
+    #     sr_list = response_json["sr"]  # sr 리스트 가져오기
+
+    #     display_names = []  # displayName 값을 저장할 리스트
+
+    #     for sr_item in sr_list:
+    #         if sr_item["type"] == "HOTEL":
+    #             display_name = sr_item["regionNames"]["shortName"]
+    #             display_names.append(display_name)
+
+    #     return display_names
+
+    # airbnb 크롤링
+    def search_hotel(self, query):
+        entities = self.predict(query)  # 입력된 문장에 대해 NER 수행하여 entity 추출
+        city_lc = [entity for entity in entities if entity[1] == "B_LC"]
+        city_name = [entity[0] for entity in city_lc]  # 추출된 도시 이름들
+        keywords = "+".join(city_name)
+
+        # Redis에서 캐시된 데이터 확인
+        cache_key = f"keywords:{keywords}"
+        cached_data = redis_client.get(cache_key)
+        if cached_data:
+            # 캐시된 데이터가 존재하는 경우, 해당 데이터 반환
+            decoded_data = cached_data.decode("utf-8")
+            decoded_data = json.loads(decoded_data)
+            return decoded_data
+
+        url = f"https://www.airbnb.co.kr/s/{keywords}/homes?tab_id=home_tab"
+
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        tags = soup.find_all(attrs={"data-testid": "listing-card-title"})
+        subs = soup.find_all("span", class_="t1a9j9y7 r4a59j5 dir dir-ltr")
+        links = soup.find_all("a", class_="l1ovpqvx bn2bl2p dir dir-ltr")
+
+        results = []
+        for tag, sub, link in zip(tags, subs, links):
+            title = tag.get_text(strip=True)
+            score = sub.get_text(strip=True)
+            link_href = link["href"]
+
+            results.append(
+                {"숙소": title, "평점": score, "링크": "https://www.airbnb.co.kr" + link_href}
+            )
+        # 결과를 Redis에 캐시 저장
+        redis_client.set(cache_key, json.dumps(results, ensure_ascii=False))
+
+        return results
+
+    # 맛집 검색
+    def search_rest(self, query):
         entities = self.predict(query)  # 입력된 문장에 대해 NER 수행하여 entity 추출
         city_lc = [
             entity for entity in entities if entity[1] == "B_LC"
-        ]  # 책 관련 entity 필터링
-        city_name = [entity[0] for entity in city_lc]  # 추출된 책 이름들
-        # print(city_name)
-        url = "https://hotels4.p.rapidapi.com/locations/v3/search"
-        querystring = {
-            "q": city_name,
-            "locale": "ko_KR",
-        }
+        ]  # 도시 관련 entity 필터링
+        city_name = [entity[0] for entity in city_lc]  # 추출된 도시 이름들
+        keywords = "+".join(city_name)
+
+        url = f"https://www.siksinhot.com/search?keywords={keywords}"
 
         headers = {
-            "X-RapidAPI-Key": "477cad2fb7msh45fdc7b31b5ac16p1396b1jsn79ba71a45fc4",
-            "X-RapidAPI-Host": "hotels4.p.rapidapi.com",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36",
         }
 
-        response = requests.get(url, headers=headers, params=querystring)
+        response = requests.get(url, headers=headers)
 
-        response_json = response.json()
-        sr_list = response_json["sr"]  # sr 리스트 가져오기
+        soup = BeautifulSoup(response.content, "html.parser")
 
-        display_names = []  # displayName 값을 저장할 리스트
+        results = []
+        for element in soup.find_all("a", class_="textBox"):
+            title_element = element.find("h2")
+            score_element = element.find(class_="score")
 
-        for sr_item in sr_list:
-            if sr_item["type"] == "HOTEL":
-                display_name = sr_item["regionNames"]["shortName"]
-                display_names.append(display_name)
+            title = title_element.get_text(strip=True) if title_element else None
+            score = score_element.get_text(strip=True) if score_element else None
 
-        return display_names
+            link = element["href"] if "href" in element.attrs else None
+
+            results.append({"식당": title, "평점": score, "링크": link})
+        return results

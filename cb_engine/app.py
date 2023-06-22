@@ -7,8 +7,14 @@ from utils.preprocessing import Preprocessing
 from models.intent.intentModel import IntentModel
 from models.ner.NerModel import NerModel
 from utils.FindAnswer import FindAnswer
+import uvicorn
+import time
+
+if __name__ == "__main__":
+    uvicorn.run("app:app", host="localhost", port=8000, reload=True)
 
 app = FastAPI()
+
 
 # CORS 정책 설정
 app.add_middleware(
@@ -22,6 +28,7 @@ app.add_middleware(
 
 @app.get("/chat_query")
 def chat_query(query: str):
+    start = time.time()
     p = Preprocessing(
         word2index_dic="C:/Users/oem/Desktop/project/chat-bot/cb_engine/train_tools/dict/chatbot_dict.bin",
         userdic="C:/Users/oem/Desktop/project/chat-bot/cb_engine/utils/user_dic.tsv",
@@ -59,23 +66,27 @@ def chat_query(query: str):
     # 답변 검색
     try:
         f = FindAnswer(db)
-        answer_text, answer_image = f.search(intent_name, tag)
+        answer_text, answer_sub_url = f.search(intent_name, tag)
         answer = f.tag_to_word(ner_predict, answer_text)
+        answer_sub_url = f.tag_to_word(ner_predict, answer_sub_url)
         if intent_name == "정보":  # 의도가 "정보"일때만 result 값을 설정
-            result = ner.serch_hotel(query)
+            result = ner.search_hotel(query)
+        elif intent_name == "맛집":
+            result = ner.search_rest(query)
     except:
         answer = "무슨 말인지 모르겠어요"
 
     print("==================================")
     print("답변 : ", answer)
     db.close()
-
+    end = time.time()
+    print(f"{end - start:.5f} sec")
     return {
         "질문": query,
         "의도": intent_name,
         "개체명": ner_predict,
         "ner태그": tag,
         "답변": answer,
-        "답변링크": answer_image,
+        "답변링크": answer_sub_url,
         "검색결과": result,
     }

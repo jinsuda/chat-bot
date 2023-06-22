@@ -1,10 +1,6 @@
-# 엑셀 파일 읽어서 db에 insert
 import pymysql
 import openpyxl
-
 from configs.DatabaseConfig import *
-
-# 모듈화
 
 
 # 학습데이터 초기화
@@ -28,17 +24,17 @@ def all_clear_train_data(db):
 
 # 데이터 저장
 def insert_data(db, xls_row):
-    intent, ner, query, answer, answer_img_url = xls_row
+    intent, ner, query, answer, answer_sub_url = xls_row
 
     sql = """
-        insert chatbot_train_data(intent,ner,query,answer,answer_image)
+        insert chatbot_train_data(intent,ner,query,answer,answer_sub_url)
         values('%s','%s','%s','%s','%s')
     """ % (
         intent.value,
         ner.value,
         query.value,
         answer.value,
-        answer_img_url.value,
+        answer_sub_url.value,
     )
 
     sql = sql.replace("'None'", "null")
@@ -49,7 +45,7 @@ def insert_data(db, xls_row):
 
 
 db = None
-train_file = "cb_engine/train_tools/qna/train_data.xlsx"
+train_file = "cb_engine/train_tools/qna/answer.xlsx"
 try:
     # DB 연결
     db = pymysql.connect(
@@ -69,11 +65,11 @@ try:
     sheet = wb["Sheet1"]
     for row in sheet.iter_rows(min_row=2):
         insert_data(db, row)
-
+    print(insert_data)
     wb.close()
 
 except Exception as e:
-    print("실패")
+    print("실패", str(e))
 
 finally:
     if db is not None:
