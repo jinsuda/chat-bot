@@ -1,11 +1,9 @@
 1. NER 
-인터넷 자료
 여행: 지역, 항공사, 호텔, 맛집
 
-직접
-2. intent_data.csv. corpus.txt  
-
-4.user_dic.tsv
+2. intent_data.csv
+3. corpus.txt  
+4. user_dic.tsv
 
 
 

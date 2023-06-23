@@ -72,39 +72,6 @@ class NerModel:
         tag = [self.index_to_ner[i] for i in pred_class[0]]
         return list(zip(keyword, tag))
 
-    # 호텔 검색 (API사용)
-    # def search_hotel(self, query):
-    #     entities = self.predict(query)  # 입력된 문장에 대해 NER 수행하여 entity 추출
-    #     city_lc = [
-    #         entity for entity in entities if entity[1] == "B_LC"
-    #     ]  # 책 관련 entity 필터링
-    #     city_name = [entity[0] for entity in city_lc]  # 추출된 도시 이름들
-    #     # print(city_name)
-    #     url = "https://hotels4.p.rapidapi.com/locations/v3/search"
-    #     querystring = {
-    #         "q": city_name,
-    #         "locale": "ko_KR",
-    #     }
-
-    #     headers = {
-    #         "X-RapidAPI-Key": "477cad2fb7msh45fdc7b31b5ac16p1396b1jsn79ba71a45fc4",
-    #         "X-RapidAPI-Host": "hotels4.p.rapidapi.com",
-    #     }
-
-    #     response = requests.get(url, headers=headers, params=querystring)
-
-    #     response_json = response.json()
-    #     sr_list = response_json["sr"]  # sr 리스트 가져오기
-
-    #     display_names = []  # displayName 값을 저장할 리스트
-
-    #     for sr_item in sr_list:
-    #         if sr_item["type"] == "HOTEL":
-    #             display_name = sr_item["regionNames"]["shortName"]
-    #             display_names.append(display_name)
-
-    #     return display_names
-
     # airbnb 크롤링
     def search_hotel(self, query):
         entities = self.predict(query)  # 입력된 문장에 대해 NER 수행하여 entity 추출
@@ -113,7 +80,7 @@ class NerModel:
         keywords = "+".join(city_name)
 
         # Redis에서 캐시된 데이터 확인
-        cache_key = f"keywords:{keywords}"
+        cache_key = f"keywords_hotel:{keywords}"
         cached_data = redis_client.get(cache_key)
         if cached_data:
             # 캐시된 데이터가 존재하는 경우, 해당 데이터 반환
@@ -122,8 +89,11 @@ class NerModel:
             return decoded_data
 
         url = f"https://www.airbnb.co.kr/s/{keywords}/homes?tab_id=home_tab"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36",
+        }
 
-        response = requests.get(url)
+        response = requests.get(url, headers=headers)
         soup = BeautifulSoup(response.content, "html.parser")
 
         tags = soup.find_all(attrs={"data-testid": "listing-card-title"})
@@ -153,6 +123,15 @@ class NerModel:
         city_name = [entity[0] for entity in city_lc]  # 추출된 도시 이름들
         keywords = "+".join(city_name)
 
+        # Redis에서 캐시된 데이터 확인
+        cache_key = f"keywords_rest:{keywords}"
+        cached_data = redis_client.get(cache_key)
+        if cached_data:
+            # 캐시된 데이터가 존재하는 경우, 해당 데이터 반환
+            decoded_data = cached_data.decode("utf-8")
+            decoded_data = json.loads(decoded_data)
+            return decoded_data
+
         url = f"https://www.siksinhot.com/search?keywords={keywords}"
 
         headers = {
@@ -174,4 +153,34 @@ class NerModel:
             link = element["href"] if "href" in element.attrs else None
 
             results.append({"식당": title, "평점": score, "링크": link})
+
+        redis_client.set(cache_key, json.dumps(results, ensure_ascii=False))
         return results
+
+    # def search_exchange(self, query):
+    #     entities = self.predict(query)
+    #     country_lc = [entity for entity in entities if entity[1] == "B_LC"]
+    #     country_name = [entity[0] for entity in country_lc]
+    #     country = "+".join(country_name)
+
+    #     url = "https://finance.naver.com/marketindex/?tabSel=exchange#tab_section"
+
+    #     response = requests.get(url)
+    #     soup = BeautifulSoup(response.text, "html.parser")
+
+    #     option_elements = soup.find_all("option")
+    #     exchange_rates = {}
+
+    #     for option_element in option_elements:
+    #         country_unit = option_element.get_text(strip=True)
+    #         value = option_element["value"]
+    #         country, unit = country_unit.split(" ", 1)
+    #         exchange_rates[country] = {"value": value, "unit": unit}
+
+    #     if country in exchange_rates:
+    #         data = exchange_rates[country]
+    #         value = data["value"]
+    #         unit = data["unit"]
+    #         return f"{country}: 1{unit} = {value}원 "
+    #     else:
+    #         return "해당 나라의 환율 정보를 찾을 수 없습니다."
