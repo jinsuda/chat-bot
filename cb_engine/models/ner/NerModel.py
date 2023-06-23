@@ -157,6 +157,7 @@ class NerModel:
         redis_client.set(cache_key, json.dumps(results, ensure_ascii=False))
         return results
 
+    # 환율 정보
     # def search_exchange(self, query):
     #     entities = self.predict(query)
     #     country_lc = [entity for entity in entities if entity[1] == "B_LC"]

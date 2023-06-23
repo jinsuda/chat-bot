@@ -8,6 +8,7 @@ def all_clear_train_data(db):
     # 기존 데이터 전체 삭제
     # delete : 내용 삭제
     # drop : 테이블 삭제
+
     sql = """
         delete from chatbot_train_data
     """

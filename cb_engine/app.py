@@ -1,5 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import asyncio
+import uvicorn
+import time
 
 from configs.DatabaseConfig import *
 from utils.Database import Database
@@ -7,19 +10,18 @@ from utils.preprocessing import Preprocessing
 from models.intent.intentModel import IntentModel
 from models.ner.NerModel import NerModel
 from utils.FindAnswer import FindAnswer
-import uvicorn
-import time
 
+host = "192.168.0.84"
 if __name__ == "__main__":
-    uvicorn.run("app:app", host="localhost", port=8000, reload=True)
-
+    # uvicorn.run("app:app", host="localhost", port=8000, reload=True)
+    uvicorn.run("app:app", host="host", port=8000, reload=True)
 app = FastAPI()
 
 
 # CORS 정책 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # 클라이언트 주소
+    allow_origins=["http://iotsam:3001"],  # 클라이언트 주소
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -27,7 +29,7 @@ app.add_middleware(
 
 
 @app.get("/chat_query")
-def chat_query(query: str):
+async def chat_query(query: str):
     start = time.time()
     p = Preprocessing(
         word2index_dic="C:/Users/oem/Desktop/project/chat-bot/cb_engine/train_tools/dict/chatbot_dict.bin",
@@ -56,12 +58,6 @@ def chat_query(query: str):
     ner_predict = ner.predict(query)
     tag = ner.predict_tag(query)
 
-    print("질문 : ", query)
-    print("==================================")
-    print("의도 : ", intent_name)
-    print("개체명 : ", ner_predict)
-    print("ner태그 :", tag)
-
     result = None
     # 답변 검색
     try:
@@ -76,8 +72,6 @@ def chat_query(query: str):
     except:
         answer = "무슨 말인지 모르겠어요"
 
-    print("==================================")
-    print("답변 : ", answer)
     db.close()
     end = time.time()
     print(f"{end - start:.5f} sec")
