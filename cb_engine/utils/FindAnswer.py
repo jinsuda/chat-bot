@@ -42,7 +42,7 @@ class FindAnswer:
     def tag_to_word(self, ner_predict, answer):
         for word, tag in ner_predict:
             # 변환해야 하는 태그가 있는 경우 추가
-            if tag == "B_AIR" or tag == "B_LC":
+            if tag == "B_LC":
                 answer = answer.replace(tag, word)
 
         answer = answer.replace("{", "")

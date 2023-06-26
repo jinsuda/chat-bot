@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 import uvicorn
 import time
+import random
 
 from configs.DatabaseConfig import *
 from utils.Database import Database
@@ -11,17 +12,16 @@ from models.intent.intentModel import IntentModel
 from models.ner.NerModel import NerModel
 from utils.FindAnswer import FindAnswer
 
-host = "192.168.0.84"
 if __name__ == "__main__":
-    # uvicorn.run("app:app", host="localhost", port=8000, reload=True)
-    uvicorn.run("app:app", host="host", port=8000, reload=True)
+    uvicorn.run("app:app", host="localhost", port=8000, reload=True)
+
 app = FastAPI()
 
 
 # CORS 정책 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://iotsam:3001"],  # 클라이언트 주소
+    allow_origins=["http://iotsam:3002"],  # 프론트 클라이언트 주소
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -66,9 +66,9 @@ async def chat_query(query: str):
         answer = f.tag_to_word(ner_predict, answer_text)
         answer_sub_url = f.tag_to_word(ner_predict, answer_sub_url)
         if intent_name == "정보":  # 의도가 "정보"일때만 result 값을 설정
-            result = ner.search_hotel(query)
+            result = random.sample(list(ner.search_hotel(query)), k=3)
         elif intent_name == "맛집":
-            result = ner.search_rest(query)
+            result = random.sample(list(ner.search_rest(query)), k=3)
     except:
         answer = "무슨 말인지 모르겠어요"
 

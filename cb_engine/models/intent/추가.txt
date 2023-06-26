@@ -79,3 +79,33 @@
 아르메니아 환율,6
 키르기스스탄 환율,6
 터키메니스탄 환율,6
+
+
+    # 환율 정보
+    # def search_exchange(self, query):
+    #     entities = self.predict(query)
+    #     country_lc = [entity for entity in entities if entity[1] == "B_LC"]
+    #     country_name = [entity[0] for entity in country_lc]
+    #     country = "+".join(country_name)
+
+    #     url = "https://finance.naver.com/marketindex/?tabSel=exchange#tab_section"
+
+    #     response = requests.get(url)
+    #     soup = BeautifulSoup(response.text, "html.parser")
+
+    #     option_elements = soup.find_all("option")
+    #     exchange_rates = {}
+
+    #     for option_element in option_elements:
+    #         country_unit = option_element.get_text(strip=True)
+    #         value = option_element["value"]
+    #         country, unit = country_unit.split(" ", 1)
+    #         exchange_rates[country] = {"value": value, "unit": unit}
+
+    #     if country in exchange_rates:
+    #         data = exchange_rates[country]
+    #         value = data["value"]
+    #         unit = data["unit"]
+    #         return f"{country}: 1{unit} = {value}원 "
+    #     else:
+    #         return "해당 나라의 환율 정보를 찾을 수 없습니다."
