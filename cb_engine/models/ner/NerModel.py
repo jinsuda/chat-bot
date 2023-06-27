@@ -154,6 +154,6 @@ class NerModel:
             link = element["href"] if "href" in element.attrs else None
 
             results.append({"식당": title, "평점": score, "링크": link})
-            random.choice
+
         # redis_client.set(cache_key, json.dumps(results, ensure_ascii=False))
         return results
