@@ -15,6 +15,20 @@ from multiprocessing import Pool
 
 app = FastAPI()
 
+if __name__ == "__main__":
+    uvicorn.run("app:app", host="0.0.0.0", port=8001, reload=True)
+    # pool = Pool(processes=4)
+    # pool.map(chat_query)
+
+# CORS 정책 설정
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # 객체 초기화 및 데이터베이스 연결
 p = Preprocessing(
     word2index_dic="C:/Users/oem/Desktop/bagcation/chatbot/cb_engine/train_tools/dict/chatbot_dict.bin",
@@ -36,15 +50,6 @@ intent = IntentModel(
 ner = NerModel(
     model_name="C:/Users/oem/Desktop/bagcation/chatbot/cb_engine/models/ner/ner_model.h5",
     preprocess=p,
-)
-
-# CORS 정책 설정
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
 )
 
 
@@ -84,9 +89,3 @@ async def chat_query(query: str):
         "답변링크": answer_sub_url,
         "검색결과": result,
     }
-
-
-if __name__ == "__main__":
-    uvicorn.run("app:app", host="0.0.0.0", port=8001, reload=True)
-    # pool = Pool(processes=4)
-    # pool.map(chat_query)
