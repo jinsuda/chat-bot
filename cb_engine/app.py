@@ -72,9 +72,9 @@ async def chat_query(query: str):
         answer = f.tag_to_word(ner_predict, answer_text)
         answer_sub_url = f.tag_to_word(ner_predict, answer_sub_url)
         if intent_name == "정보":
-            result = random.sample(list(ner.search_hotel(query)), k=3)
+            result = random.sample(list(f.search_hotel(ner_predict)), k=3)
         elif intent_name == "맛집":
-            result = random.sample(list(ner.search_rest(query)), k=3)
+            result = random.sample(list(f.search_rest(ner_predict)), k=3)
     except:
         answer = "데이터가 없습니다"
 

@@ -1,14 +1,7 @@
 import tensorflow as tf
-from tensorflow.keras.models import Model, load_model
+from tensorflow.keras.models import load_model
 from tensorflow.keras import preprocessing
 import numpy as np
-import requests
-from bs4 import BeautifulSoup
-from redis_data import create_redis_client
-import json
-import random
-
-redis_client = create_redis_client()
 
 
 class NerModel:
@@ -72,88 +65,3 @@ class NerModel:
 
         tag = [self.index_to_ner[i] for i in pred_class[0]]
         return list(zip(keyword, tag))
-
-    # airbnb 크롤링
-    def search_hotel(self, query):
-        entities = self.predict(query)  # 입력된 문장에 대해 NER 수행하여 entity 추출
-        city_lc = [entity for entity in entities if entity[1] == "B_LC"]
-        city_name = [entity[0] for entity in city_lc]  # 추출된 도시 이름들
-        keywords = "+".join(city_name)
-
-        # Redis에서 캐시된 데이터 확인
-        # cache_key = f"keywords_hotel:{keywords}"
-        # cached_data = redis_client.get(cache_key)
-        # if cached_data:
-        #     # 캐시된 데이터가 존재하는 경우, 해당 데이터 반환
-        #     decoded_data = cached_data.decode("utf-8")
-        #     decoded_data = json.loads(decoded_data)
-        #     return decoded_data
-
-        url = f"https://www.airbnb.co.kr/s/{keywords}/homes?tab_id=home_tab"
-        # headers = {
-        #     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36",
-        # }
-
-        response = requests.get(url)
-        soup = BeautifulSoup(response.content, "html.parser")
-
-        tags = soup.find_all(attrs={"data-testid": "listing-card-title"})
-        subs = soup.find_all("span", class_="t1a9j9y7 r4a59j5 dir dir-ltr")
-        links = soup.find_all("a", class_="l1ovpqvx bn2bl2p dir dir-ltr")
-
-        results = []
-        for tag, sub, link in zip(tags, subs, links):
-            title = tag.get_text(strip=True)
-            score = sub.get_text(strip=True)
-            link_href = link["href"]
-
-            results.append(
-                {"제목": title, "평점": score, "링크": "https://www.airbnb.co.kr" + link_href}
-            )
-        # 결과를 Redis에 캐시 저장
-        # redis_client.set(cache_key, json.dumps(results, ensure_ascii=False))
-
-        return results
-
-    # 맛집 검색
-    def search_rest(self, query):
-        entities = self.predict(query)  # 입력된 문장에 대해 NER 수행하여 entity 추출
-        city_lc = [
-            entity for entity in entities if entity[1] == "B_LC"
-        ]  # 도시 관련 entity 필터링
-        city_name = [entity[0] for entity in city_lc]  # 추출된 도시 이름들
-        keywords = "+".join(city_name)
-
-        # Redis에서 캐시된 데이터 확인
-        # cache_key = f"keywords_rest:{keywords}"
-        # cached_data = redis_client.get(cache_key)
-        # if cached_data:
-        #     # 캐시된 데이터가 존재하는 경우, 해당 데이터 반환
-        #     decoded_data = cached_data.decode("utf-8")
-        #     decoded_data = json.loads(decoded_data)
-        #     return decoded_data
-
-        url = f"https://www.siksinhot.com/search?keywords={keywords}"
-
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36",
-        }
-
-        response = requests.get(url, headers=headers)
-
-        soup = BeautifulSoup(response.content, "html.parser")
-
-        results = []
-        for element in soup.find_all("a", class_="textBox"):
-            title_element = element.find("h2")
-            score_element = element.find(class_="score")
-
-            title = title_element.get_text(strip=True) if title_element else None
-            score = score_element.get_text(strip=True) if score_element else None
-
-            link = element["href"] if "href" in element.attrs else None
-
-            results.append({"제목": title, "평점": score, "링크": link})
-
-        # redis_client.set(cache_key, json.dumps(results, ensure_ascii=False))
-        return results

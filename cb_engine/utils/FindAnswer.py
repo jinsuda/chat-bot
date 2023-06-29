@@ -1,3 +1,6 @@
+import requests
+from bs4 import BeautifulSoup
+
 # 딥러닝 모델을 통해 알아낸 의도, 개체명을 이용해서 DB에서 답변 검색
 
 
@@ -48,3 +51,63 @@ class FindAnswer:
         answer = answer.replace("{", "")
         answer = answer.replace("}", "")
         return answer
+
+    # airbnb 크롤링
+    def search_hotel(self, entities):
+        # entities = self.predict(query)  # 입력된 문장에 대해 NER 수행하여 entity 추출
+        city_name = [entity[0] for entity in entities if entity[1] == "B_LC"]
+        keywords = "+".join(city_name)
+
+        url = f"https://www.airbnb.co.kr/s/{keywords}/homes?tab_id=home_tab"
+        # headers = {
+        #     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36",
+        # }
+
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        tags = soup.find_all(attrs={"data-testid": "listing-card-title"})
+        subs = soup.find_all("span", class_="t1a9j9y7 r4a59j5 dir dir-ltr")
+        links = soup.find_all("a", class_="l1ovpqvx bn2bl2p dir dir-ltr")
+
+        results = []
+        for tag, sub, link in zip(tags, subs, links):
+            title = tag.get_text(strip=True)
+            score = sub.get_text(strip=True)
+            link_href = link["href"]
+
+            results.append(
+                {"제목": title, "평점": score, "링크": "https://www.airbnb.co.kr" + link_href}
+            )
+
+        return results
+
+    # 맛집 검색
+    def search_rest(self, entities):
+        # entities = self.predict(query)  # 입력된 문장에 대해 NER 수행하여 entity 추출
+        city_name = [entity[0] for entity in entities if entity[1] == "B_LC"]
+        keywords = "+".join(city_name)
+
+        url = f"https://www.siksinhot.com/search?keywords={keywords}"
+
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36",
+        }
+
+        response = requests.get(url, headers=headers)
+
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        results = []
+        for element in soup.find_all("a", class_="textBox"):
+            title_element = element.find("h2")
+            score_element = element.find(class_="score")
+
+            title = title_element.get_text(strip=True) if title_element else None
+            score = score_element.get_text(strip=True) if score_element else None
+
+            link = element["href"] if "href" in element.attrs else None
+
+            results.append({"제목": title, "평점": score, "링크": link})
+
+        return results
